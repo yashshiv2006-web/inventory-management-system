@@ -1,0 +1,387 @@
+/* ==============================================================================
+   Retail Stock Optimization and Sales Intelligence Platform - Main Stylesheet
+   Modern, Educational, Industry-Grade Design
+   ============================================================================== */
+
+:root {
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --sidebar-bg: #0f172a;
+    --sidebar-hover: #1e293b;
+    --sidebar-active: #3b82f6;
+    --bg-light: #f8fafc;
+    --card-bg: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #06b6d4;
+    --transition-speed: 0.25s;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ==============================================================================
+   Sidebar Layout
+   ============================================================================== */
+
+#wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
+#sidebar {
+    min-width: 260px;
+    max-width: 260px;
+    background-color: var(--sidebar-bg);
+    color: #fff;
+    transition: all var(--transition-speed);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+}
+
+#sidebar .sidebar-brand {
+    padding: 1.5rem 1.25rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #fff;
+    text-decoration: none;
+}
+
+#sidebar .sidebar-brand i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.sidebar-nav {
+    list-style: none;
+    padding: 1rem 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.sidebar-header {
+    padding: 0.75rem 1.5rem 0.25rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.75rem 1.5rem;
+    color: #cbd5e1;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all var(--transition-speed);
+    border-left: 3px solid transparent;
+}
+
+.sidebar-link i {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+}
+
+.sidebar-link:hover {
+    color: #fff;
+    background-color: var(--sidebar-hover);
+    border-left-color: var(--primary-color);
+}
+
+.sidebar-link.active {
+    color: #fff;
+    background-color: rgba(37, 99, 235, 0.15);
+    border-left-color: var(--sidebar-active);
+    font-weight: 600;
+}
+
+.sidebar-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ==============================================================================
+   Main Content Area
+   ============================================================================== */
+
+#content {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.top-navbar {
+    background-color: #fff;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.85rem 1.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.main-body {
+    padding: 1.75rem;
+    flex-grow: 1;
+}
+
+/* ==============================================================================
+   Metric Cards (Dashboard & Analytics)
+   ============================================================================== */
+
+.metric-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+}
+
+.metric-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+}
+
+.metric-card.card-blue::after { background-color: var(--primary-color); }
+.metric-card.card-green::after { background-color: var(--success-color); }
+.metric-card.card-amber::after { background-color: var(--warning-color); }
+.metric-card.card-purple::after { background-color: #8b5cf6; }
+.metric-card.card-teal::after { background-color: var(--info-color); }
+
+.metric-info h6 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+}
+
+.metric-info h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+    color: var(--text-main);
+}
+
+.metric-info p {
+    font-size: 0.82rem;
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.metric-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+}
+
+.card-blue .metric-icon { background: rgba(37, 99, 235, 0.1); color: var(--primary-color); }
+.card-green .metric-icon { background: rgba(16, 185, 129, 0.1); color: var(--success-color); }
+.card-amber .metric-icon { background: rgba(245, 158, 11, 0.1); color: var(--warning-color); }
+.card-purple .metric-icon { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+.card-teal .metric-icon { background: rgba(6, 182, 212, 0.1); color: var(--info-color); }
+
+/* ==============================================================================
+   Custom Tables & Data Grids
+   ============================================================================== */
+
+.custom-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    margin-bottom: 1.5rem;
+}
+
+.custom-card-header {
+    padding: 1.15rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: #fff;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.custom-card-header h5 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.table-custom {
+    margin-bottom: 0;
+}
+
+.table-custom th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0.85rem 1.25rem;
+    border-top: none;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.table-custom td {
+    padding: 0.95rem 1.25rem;
+    vertical-align: middle;
+    font-size: 0.92rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.table-custom tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* ==============================================================================
+   Status Badges
+   ============================================================================== */
+
+.badge-in-stock {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
+}
+
+.badge-low-stock {
+    background-color: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
+}
+
+.badge-out-of-stock {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
+}
+
+/* ==============================================================================
+   Forms & Controls
+   ============================================================================== */
+
+.form-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #334155;
+    margin-bottom: 0.35rem;
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.92rem;
+    transition: all 0.2s;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    border-radius: 8px;
+    padding: 0.55rem 1.25rem;
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+/* ==============================================================================
+   Login Screen
+   ============================================================================== */
+
+.login-page {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 440px;
+    padding: 2.5rem;
+}
+
+/* ==============================================================================
+   Responsive Queries
+   ============================================================================== */
+
+@media (max-width: 991px) {
+    #sidebar {
+        margin-left: -260px;
+    }
+    #sidebar.active {
+        margin-left: 0;
+    }
+}

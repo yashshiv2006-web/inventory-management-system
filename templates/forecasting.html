@@ -1,1 +1,132 @@
- 
+{% extends "base.html" %}
+
+{% block title %}Demand Forecasting & Stock Optimization - Retail Platform{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Predictive Demand & Stock Optimization</h3>
+        <p class="text-muted small mb-0">AI/statistical run-rate forecasting to prevent stockouts and compute automatic reorder quantities.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('web_bp.inventory') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-boxes me-1"></i> View Current Inventory
+        </a>
+    </div>
+</div>
+
+<!-- 3 Forecasting Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="metric-card card-teal">
+            <div class="metric-info">
+                <h6>Projected 30-Day Demand</h6>
+                <h3>{{ summary.total_predicted_demand_units }} <span style="font-size: 0.9rem;">units</span></h3>
+                <p>Expected customer purchases</p>
+            </div>
+            <div class="metric-icon"><i class="bi bi-graph-up"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card card-amber">
+            <div class="metric-info">
+                <h6>Reorder Urgency</h6>
+                <h3 class="text-warning">{{ summary.products_at_risk_count }}</h3>
+                <p>Products with insufficient stock</p>
+            </div>
+            <div class="metric-icon"><i class="bi bi-exclamation-octagon"></i></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="metric-card card-blue">
+            <div class="metric-info">
+                <h6>Recommended Reorder Total</h6>
+                <h3>{{ summary.total_recommended_reorder_units }} <span style="font-size: 0.9rem;">units</span></h3>
+                <p>Purchase order pipeline</p>
+            </div>
+            <div class="metric-icon"><i class="bi bi-cart-plus"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Educational Viva Formula Card -->
+<div class="alert alert-light border shadow-sm mb-4">
+    <div class="d-flex align-items-start gap-3">
+        <div class="fs-2 text-primary"><i class="bi bi-mortarboard-fill"></i></div>
+        <div>
+            <h6 class="fw-bold text-main mb-1">Retail Optimization Mathematical Model</h6>
+            <p class="small text-muted mb-2">
+                This module uses an educational <strong>moving average sales velocity model</strong> with safety stock buffers:
+            </p>
+            <div class="d-flex flex-wrap gap-3 small">
+                <div class="bg-white px-3 py-1 rounded border">
+                    <code>Daily Run Rate = Total Sold &divide; 30 Days</code>
+                </div>
+                <div class="bg-white px-3 py-1 rounded border">
+                    <code>30-Day Demand = Daily Run Rate &times; 30</code>
+                </div>
+                <div class="bg-white px-3 py-1 rounded border">
+                    <code>Reorder Quantity = Max(0, (Demand + Safety Stock) - Current Stock)</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forecasting Table -->
+<div class="custom-card">
+    <div class="custom-card-header">
+        <h5><i class="bi bi-cpu text-primary"></i> 30-Day Demand Projections & Reorder Recommendations</h5>
+        <span class="badge bg-light text-dark border">{{ forecasts|length }} Products Analyzed</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Current Stock</th>
+                    <th>Past Sales</th>
+                    <th>Daily Run Rate</th>
+                    <th>Forecast (30d)</th>
+                    <th>Safety Stock</th>
+                    <th>Recommended Reorder</th>
+                    <th>Stockout Risk</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if forecasts %}
+                    {% for f in forecasts %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ f.product_name }}</div>
+                                <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.72rem;">{{ f.product_sku }}</span>
+                            </td>
+                            <td>
+                                <strong>{{ f.current_stock }}</strong> units
+                            </td>
+                            <td>{{ f.historical_units_sold }} units</td>
+                            <td>{{ f.daily_run_rate }} / day</td>
+                            <td class="fw-bold text-primary">{{ f.projected_demand_30d }} units</td>
+                            <td class="text-muted small">{{ f.safety_stock }} units</td>
+                            <td>
+                                {% if f.recommended_reorder > 0 %}
+                                    <span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle fs-6">
+                                        +{{ f.recommended_reorder }} units
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success-subtle text-success border">Adequate (0)</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ f.risk_badge }}-subtle text-{{ f.risk_badge }}-emphasis border">
+                                    {{ f.risk_level }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

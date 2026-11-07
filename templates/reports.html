@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Audits - Retail Stock Platform{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Reports & Audit Center</h3>
+        <p class="text-muted small mb-0">Generate, audit, and export commercial inventory and financial statements.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-printer me-1"></i> Print Report
+        </button>
+    </div>
+</div>
+
+<!-- Report Navigation Tabs -->
+<ul class="nav nav-pills mb-4" id="reportTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="inventory-tab" data-bs-toggle="pill" data-bs-target="#inventoryReport" type="button" role="tab">
+            <i class="bi bi-boxes me-1"></i> Inventory Valuation
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="sales-tab" data-bs-toggle="pill" data-bs-target="#salesReport" type="button" role="tab">
+            <i class="bi bi-cash-coin me-1"></i> Sales Audit Trail
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="supplier-tab" data-bs-toggle="pill" data-bs-target="#supplierReport" type="button" role="tab">
+            <i class="bi bi-truck me-1"></i> Supplier Directory
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="reportTabsContent">
+    <!-- Tab 1: Inventory Valuation Report -->
+    <div class="tab-pane fade show active" id="inventoryReport" role="tabpanel">
+        <div class="custom-card">
+            <div class="custom-card-header">
+                <div>
+                    <h5><i class="bi bi-file-earmark-spreadsheet text-primary"></i> Inventory Valuation & Stock Ledger</h5>
+                    <small class="text-muted">Total Asset Valuation: <strong>${{ "%.2f"|format(inventory_summary.total_inventory_asset_value) }}</strong> ({{ inventory_summary.total_inventory_units }} units)</small>
+                </div>
+                <a href="{{ url_for('web_bp.reports') }}?format=csv&type=inventory" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-filetype-csv me-1"></i> Download CSV
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Unit Price</th>
+                            <th>Stock Count</th>
+                            <th>Total Asset Value</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in products %}
+                            {% set qty = p.inventory.quantity if p.inventory else 0 %}
+                            {% set total_val = p.price * qty %}
+                            {% set status = p.inventory.get_stock_status() if p.inventory else 'OUT_OF_STOCK' %}
+                            <tr>
+                                <td class="font-monospace small">{{ p.sku }}</td>
+                                <td class="fw-bold">{{ p.name }}</td>
+                                <td>{{ p.category }}</td>
+                                <td>${{ "%.2f"|format(p.price) }}</td>
+                                <td>{{ qty }} units</td>
+                                <td class="fw-bold text-primary">${{ "%.2f"|format(total_val) }}</td>
+                                <td>
+                                    {% if status == 'IN_STOCK' %}
+                                        <span class="badge badge-in-stock">In Stock</span>
+                                    {% elif status == 'LOW_STOCK' %}
+                                        <span class="badge badge-low-stock">Low Stock</span>
+                                    {% else %}
+                                        <span class="badge badge-out-of-stock">Out of Stock</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Sales Audit Trail -->
+    <div class="tab-pane fade" id="salesReport" role="tabpanel">
+        <div class="custom-card">
+            <div class="custom-card-header">
+                <div>
+                    <h5><i class="bi bi-receipt-cutoff text-success"></i> Comprehensive Sales Audit Trail</h5>
+                    <small class="text-muted">Gross Revenue: <strong>${{ "%.2f"|format(revenue_metrics.total_revenue) }}</strong> ({{ revenue_metrics.total_transactions }} transactions)</small>
+                </div>
+                <a href="{{ url_for('web_bp.reports') }}?format=csv&type=sales" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-filetype-csv me-1"></i> Download CSV
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Tx ID</th>
+                            <th>Product Name</th>
+                            <th>Quantity</th>
+                            <th>Unit Price</th>
+                            <th>Discount</th>
+                            <th>Net Revenue</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in sales %}
+                            <tr>
+                                <td class="font-monospace small">TX-{{ "%04d"|format(s.id) }}</td>
+                                <td class="fw-bold">{{ s.product.name if s.product else 'N/A' }}</td>
+                                <td>{{ s.quantity }}x</td>
+                                <td>${{ "%.2f"|format(s.unit_price) }}</td>
+                                <td>{{ s.discount }}%</td>
+                                <td class="fw-bold text-success">${{ "%.2f"|format(s.total_amount) }}</td>
+                                <td class="text-muted small">{{ s.sale_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3: Supplier Directory -->
+    <div class="tab-pane fade" id="supplierReport" role="tabpanel">
+        <div class="custom-card">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-building text-secondary"></i> Vendor Procurement Directory</h5>
+                <span class="badge bg-light text-dark border">{{ suppliers|length }} Suppliers</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Vendor</th>
+                            <th>Category</th>
+                            <th>Contact</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sup in suppliers %}
+                            <tr>
+                                <td class="fw-bold text-primary">{{ sup.name }}</td>
+                                <td>{{ sup.category }}</td>
+                                <td>{{ sup.contact_name }}</td>
+                                <td>{{ sup.email }}</td>
+                                <td class="font-monospace small">{{ sup.phone }}</td>
+                                <td>
+                                    <span class="badge bg-warning-subtle text-warning-emphasis">
+                                        ★ {{ sup.rating }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

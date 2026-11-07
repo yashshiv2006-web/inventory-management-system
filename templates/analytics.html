@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Sales Intelligence & Analytics - Retail Stock Platform{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Sales Intelligence & Business Analytics</h3>
+        <p class="text-muted small mb-0">High-level financial summaries, category trends, best-sellers, and inventory capital allocation.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('web_bp.reports') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-printer me-1"></i> Print Intelligence Report
+        </a>
+    </div>
+</div>
+
+<!-- Key Performance Indicators (KPIs) -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="metric-card card-green">
+            <div class="metric-info">
+                <h6>Cumulative Revenue</h6>
+                <h3>${{ "%.2f"|format(revenue_metrics.total_revenue) }}</h3>
+                <p>Gross sales collected</p>
+            </div>
+            <div class="metric-icon"><i class="bi bi-currency-dollar"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="metric-card card-blue">
+            <div class="metric-info">
+                <h6>Inventory Asset Value</h6>
+                <h3>${{ "%.2f"|format(inventory_summary.total_inventory_asset_value) }}</h3>
+                <p>{{ inventory_summary.total_inventory_units }} units in stock</p>
+            </div>
+            <div class="metric-icon"><i class="bi bi-safe"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="metric-card card-purple">
+            <div class="metric-info">
+                <h6>Total Units Sold</h6>
+                <h3>{{ revenue_metrics.total_units_sold }}</h3>
+                <p>Across {{ revenue_metrics.total_transactions }} transactions</p>
+            </div>
+            <div class="metric-icon"><i class="bi bi-bag-check"></i></div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="metric-card card-amber">
+            <div class="metric-info">
+                <h6>Stockout Risk Items</h6>
+                <h3 class="text-warning">{{ inventory_summary.low_stock_alerts_count }}</h3>
+                <p>Items needing reorder</p>
+            </div>
+            <div class="metric-icon"><i class="bi bi-shield-exclamation"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Visualizations Grid (Charts: Bar, Line, Pie/Doughnut) -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Revenue Trend (Line Chart) -->
+    <div class="col-lg-6">
+        <div class="custom-card h-100">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-graph-up text-primary"></i> 30-Day Revenue Trend (Line Chart)</h5>
+                <span class="badge bg-light text-dark border">Daily Velocity</span>
+            </div>
+            <div class="p-3" style="height: 280px;">
+                <canvas id="revenueTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Category Sales (Bar Chart) -->
+    <div class="col-lg-6">
+        <div class="custom-card h-100">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-bar-chart-line text-info"></i> Units Sold by Category (Bar Chart)</h5>
+                <span class="badge bg-light text-dark border">Departmental Mix</span>
+            </div>
+            <div class="p-3" style="height: 280px;">
+                <canvas id="categorySalesChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 3: Inventory Health (Pie/Doughnut Chart) -->
+    <div class="col-lg-5">
+        <div class="custom-card h-100">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-pie-chart text-success"></i> Stock Health Rate (Doughnut Chart)</h5>
+                <span class="badge bg-success-subtle text-success border">
+                    {{ inventory_summary.inventory_health_percentage }}% Healthy
+                </span>
+            </div>
+            <div class="p-3 d-flex flex-column align-items-center justify-content-center" style="height: 280px;">
+                <canvas id="inventoryHealthChart"
+                        data-in-stock="{{ inventory_summary.in_stock_products_count }}"
+                        data-low-stock="{{ inventory_summary.low_stock_alerts_count }}"
+                        data-out-stock="{{ inventory_summary.out_of_stock_count }}">
+                </canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: Top 5 Best Sellers (Horizontal Bar Chart) -->
+    <div class="col-lg-7">
+        <div class="custom-card h-100">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-trophy text-warning"></i> Best-Selling Products by Revenue</h5>
+                <span class="badge bg-light text-dark border">Top Performers</span>
+            </div>
+            <div class="p-3" style="height: 280px;">
+                <canvas id="topProductsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Best-Sellers Ranking Table -->
+<div class="custom-card">
+    <div class="custom-card-header">
+        <h5><i class="bi bi-list-ol text-primary"></i> Top-Selling Catalog Rankings</h5>
+        <span class="badge bg-light text-dark border">Calculated via SQL Aggregation</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Units Sold</th>
+                    <th>Revenue Generated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if top_sellers %}
+                    {% for item in top_sellers %}
+                        <tr>
+                            <td>
+                                {% if item.rank == 1 %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-trophy-fill me-1"></i>#1</span>
+                                {% elif item.rank == 2 %}
+                                    <span class="badge bg-secondary text-white">#2</span>
+                                {% elif item.rank == 3 %}
+                                    <span class="badge bg-dark-subtle text-dark">#3</span>
+                                {% else %}
+                                    <span class="badge bg-light text-muted border">#{{ item.rank }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ item.product_name }}</div>
+                                <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.72rem;">{{ item.product_sku }}</span>
+                            </td>
+                            <td><span class="badge bg-secondary-subtle text-secondary border">{{ item.category }}</span></td>
+                            <td><strong class="text-primary fs-6">{{ item.units_sold }}</strong> units</td>
+                            <td class="fw-bold text-success">${{ "%.2f"|format(item.revenue_generated) }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No sales aggregation available yet.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

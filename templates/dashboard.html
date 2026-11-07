@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Retail Stock Optimization Platform{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Executive Dashboard</h3>
+        <p class="text-muted small mb-0">Real-time retail inventory health and sales performance telemetry.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('web_bp.sales') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-cart-plus me-1"></i> Record Sale
+        </a>
+        <a href="{{ url_for('web_bp.reports') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-download me-1"></i> Export Data
+        </a>
+    </div>
+</div>
+
+<!-- 5 Dashboard Metric Cards -->
+<div class="row g-3 mb-4">
+    <!-- Card 1: Total Products -->
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="metric-card card-blue">
+            <div class="metric-info">
+                <h6>Total Products</h6>
+                <h3>{{ inventory_summary.total_products }}</h3>
+                <p><span class="text-success fw-bold">{{ inventory_summary.total_inventory_units }}</span> physical units</p>
+            </div>
+            <div class="metric-icon">
+                <i class="bi bi-box-seam"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Total Revenue -->
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="metric-card card-green">
+            <div class="metric-info">
+                <h6>Total Revenue</h6>
+                <h3>${{ "%.2f"|format(revenue_metrics.total_revenue) }}</h3>
+                <p>AOV: <span class="fw-bold">${{ "%.2f"|format(revenue_metrics.average_order_value) }}</span></p>
+            </div>
+            <div class="metric-icon">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Low Stock Alerts -->
+    <div class="col-xl col-md-4 col-sm-6">
+        <div class="metric-card card-amber">
+            <div class="metric-info">
+                <h6>Low Stock Alerts</h6>
+                <h3 class="text-warning">{{ inventory_summary.low_stock_alerts_count }}</h3>
+                <p>Threshold triggered</p>
+            </div>
+            <div class="metric-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Top Selling Product -->
+    <div class="col-xl col-md-6 col-sm-6">
+        <div class="metric-card card-purple">
+            <div class="metric-info">
+                <h6>Top Selling Product</h6>
+                <h3 style="font-size: 1.25rem;" class="text-truncate" title="{{ top_product_name }}">
+                    {{ top_product_name }}
+                </h3>
+                <p class="text-muted">
+                    {% if top_sellers %}
+                        {{ top_sellers[0].units_sold }} units sold (${{ "%.2f"|format(top_sellers[0].revenue_generated) }})
+                    {% else %}
+                        No sales yet
+                    {% endif %}
+                </p>
+            </div>
+            <div class="metric-icon">
+                <i class="bi bi-award"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 5: Predicted Demand -->
+    <div class="col-xl col-md-6 col-sm-12">
+        <div class="metric-card card-teal">
+            <div class="metric-info">
+                <h6>Predicted Demand</h6>
+                <h3>{{ forecast_metrics.total_predicted_demand_units }} <span style="font-size: 0.9rem;">units</span></h3>
+                <p>Next 30 days forecast</p>
+            </div>
+            <div class="metric-icon">
+                <i class="bi bi-cpu"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section: Revenue Trend & Inventory Health -->
+<div class="row g-3 mb-4">
+    <!-- Line Chart: Revenue Trend -->
+    <div class="col-lg-8">
+        <div class="custom-card h-100">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-graph-up text-primary"></i> 30-Day Revenue Trend</h5>
+                <span class="badge bg-light text-dark border">Daily Velocity</span>
+            </div>
+            <div class="p-3" style="height: 300px;">
+                <canvas id="revenueTrendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doughnut/Pie Chart: Inventory Health Breakdown -->
+    <div class="col-lg-4">
+        <div class="custom-card h-100">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-pie-chart text-success"></i> Inventory Health</h5>
+                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    {{ inventory_summary.inventory_health_percentage }}% Optimal
+                </span>
+            </div>
+            <div class="p-3 d-flex flex-column align-items-center justify-content-center" style="height: 300px;">
+                <canvas id="inventoryHealthChart"
+                        data-in-stock="{{ inventory_summary.in_stock_products_count }}"
+                        data-low-stock="{{ inventory_summary.low_stock_alerts_count }}"
+                        data-out-stock="{{ inventory_summary.out_of_stock_count }}">
+                </canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lower Section: Low Stock Warning Alerts & Recent Transactions -->
+<div class="row g-3">
+    <!-- Urgent Low Stock Alerts Table -->
+    <div class="col-lg-6">
+        <div class="custom-card h-100">
+            <div class="custom-card-header">
+                <h5 class="text-danger"><i class="bi bi-bell-fill"></i> Products Needing Replenishment</h5>
+                <a href="{{ url_for('web_bp.inventory') }}" class="btn btn-sm btn-outline-warning">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Stock</th>
+                            <th>Threshold</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if low_stock_items %}
+                            {% for item in low_stock_items %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ item.product_name }}</div>
+                                        <small class="text-muted">{{ item.product_sku }} | {{ item.category }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-low-stock">{{ item.current_stock }} units</span>
+                                    </td>
+                                    <td>{{ item.threshold }} units</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#restockModal"
+                                                data-product-id="{{ item.product_id }}"
+                                                data-product-name="{{ item.product_name }}"
+                                                data-current-stock="{{ item.current_stock }}">
+                                            <i class="bi bi-plus-lg"></i> Restock
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    <i class="bi bi-check-circle fs-3 text-success d-block mb-1"></i>
+                                    All products have healthy inventory levels!
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sales Table -->
+    <div class="col-lg-6">
+        <div class="custom-card h-100">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-receipt text-primary"></i> Recent Sales Transactions</h5>
+                <a href="{{ url_for('web_bp.sales') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-custom">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if recent_sales %}
+                            {% for s in recent_sales %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ s.product.name if s.product else 'Unknown' }}</div>
+                                        <small class="text-muted">Unit: ${{ "%.2f"|format(s.unit_price) }}</small>
+                                    </td>
+                                    <td>{{ s.quantity }}x</td>
+                                    <td class="fw-bold text-success">${{ "%.2f"|format(s.total_amount) }}</td>
+                                    <td class="text-muted small">{{ s.sale_date.strftime('%b %d, %H:%M') }}</td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    No sales transactions recorded yet.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Restock Modal -->
+<div class="modal fade" id="restockModal" tabindex="-1" aria-labelledby="restockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('web_bp.adjust_inventory') }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="restockModalLabel"><i class="bi bi-boxes me-2"></i> Restock Inventory</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="product_id" id="modalProductId">
+                    <input type="hidden" name="action" value="increase">
+
+                    <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <div id="modalProductName" class="fw-bold fs-6 text-primary"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Current Stock on Shelf</label>
+                        <div id="modalCurrentStock" class="fw-bold text-secondary"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalQuantity" class="form-label">Units to Add (Shipment Received)</label>
+                        <input type="number" class="form-control" id="modalQuantity" name="quantity" min="1" value="20" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle me-1"></i> Confirm Restock</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

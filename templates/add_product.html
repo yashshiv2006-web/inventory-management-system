@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Add Product - Retail Stock Optimization Platform{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{{ url_for('web_bp.products') }}" class="text-decoration-none text-muted small">
+        <i class="bi bi-arrow-left me-1"></i> Back to Product Catalog
+    </a>
+    <h3 class="fw-bold mt-1">Register New Product</h3>
+    <p class="text-muted small">Add a new retail item to the catalog and initialize its inventory ledger.</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="custom-card">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-plus-circle text-primary"></i> Product Specifications</h5>
+            </div>
+            <div class="p-4">
+                <form action="{{ url_for('web_bp.add_product') }}" method="POST">
+                    <div class="row g-3">
+                        <!-- SKU -->
+                        <div class="col-md-6">
+                            <label for="sku" class="form-label">Stock Keeping Unit (SKU / Barcode) *</label>
+                            <input type="text" class="form-control font-monospace text-uppercase" id="sku" name="sku" placeholder="e.g. TECH-2040" required>
+                            <small class="text-muted" style="font-size: 0.75rem;">Must be unique across catalog.</small>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="col-md-6">
+                            <label for="category" class="form-label">Department / Category *</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Select Category...</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Furniture">Furniture</option>
+                                <option value="Accessories">Accessories</option>
+                                <option value="Audio">Audio</option>
+                                <option value="Wearables">Wearables</option>
+                                <option value="Hardware">Hardware</option>
+                            </select>
+                        </div>
+
+                        <!-- Supplier Selection -->
+                        <div class="col-md-6">
+                            <label for="supplier_id" class="form-label">Wholesale Supplier (Vendor)</label>
+                            <select class="form-select" id="supplier_id" name="supplier_id">
+                                <option value="">Assign Supplier...</option>
+                                {% if suppliers %}
+                                    {% for sup in suppliers %}
+                                        <option value="{{ sup.id }}">{{ sup.name }} ({{ sup.category }})</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <small class="text-muted" style="font-size: 0.75rem;">Links product to wholesale partner.</small>
+                        </div>
+
+                        <!-- Product Name -->
+                        <div class="col-12">
+                            <label for="name" class="form-label">Product Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" placeholder="e.g. Sony WH-1000XM5 Wireless Headphones" required>
+                        </div>
+
+                        <!-- Price -->
+                        <div class="col-md-6">
+                            <label for="productPriceInput" class="form-label">Unit Selling Price ($) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" step="0.01" min="0.01" class="form-control" id="productPriceInput" name="price" placeholder="99.99" required>
+                            </div>
+                        </div>
+
+                        <!-- Initial Stock -->
+                        <div class="col-md-6">
+                            <label for="productStockInput" class="form-label">Initial Physical Stock (Units) *</label>
+                            <input type="number" min="0" class="form-control" id="productStockInput" name="initial_stock" value="25" required>
+                        </div>
+
+                        <!-- Low Stock Threshold -->
+                        <div class="col-md-6">
+                            <label for="low_stock_threshold" class="form-label">Low Stock Warning Threshold *</label>
+                            <input type="number" min="1" class="form-control" id="low_stock_threshold" name="low_stock_threshold" value="10" required>
+                            <small class="text-muted" style="font-size: 0.75rem;">Alert triggers when stock drops to or below this count.</small>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="col-12">
+                            <label for="description" class="form-label">Description / Features</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" placeholder="Enter key product highlights, technical specs, or warranty info..."></textarea>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('web_bp.products') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Register Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Preview Card -->
+    <div class="col-lg-4">
+        <div class="custom-card">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-calculator text-success"></i> Real-Time Valuation</h5>
+            </div>
+            <div class="p-4 text-center">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Estimated Initial Inventory Asset Value</div>
+                <h2 class="text-primary fw-bold" id="assetValuationPreview">$0.00</h2>
+                <p class="text-muted small mt-2">
+                    Formula: <code>Unit Price &times; Initial Stock</code>
+                </p>
+                <div class="alert alert-light border small text-start mt-3 mb-0">
+                    <i class="bi bi-lightbulb text-warning me-1"></i>
+                    <strong>Viva Note:</strong> Registering a product atomically writes to both the <code>products</code> table and the <code>inventory</code> table inside an isolated SQLAlchemy transaction.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

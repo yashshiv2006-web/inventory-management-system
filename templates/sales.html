@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Point of Sale & History - Retail Stock Optimization Platform{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Point of Sale & Sales Intelligence</h3>
+        <p class="text-muted small mb-0">Record retail customer purchases, compute discounts, and audit historical transactions.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('web_bp.reports') }}?format=csv&type=sales" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Sales CSV
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Point of Sale Checkout Form -->
+    <div class="col-lg-5">
+        <div class="custom-card h-100">
+            <div class="custom-card-header">
+                <h5><i class="bi bi-cart-plus text-primary"></i> Record Customer Sale</h5>
+            </div>
+            <div class="p-4">
+                <form action="{{ url_for('web_bp.create_sale_web') }}" method="POST">
+                    <!-- Product Selection -->
+                    <div class="mb-3">
+                        <label for="saleProductSelect" class="form-label">Select Product *</label>
+                        <select class="form-select" id="saleProductSelect" name="product_id" required>
+                            <option value="" data-price="0">Choose item from catalog...</option>
+                            {% for p in products %}
+                                {% set stock = p.inventory.quantity if p.inventory else 0 %}
+                                <option value="{{ p.id }}" data-price="{{ p.price }}" data-stock="{{ stock }}" {% if stock == 0 %}disabled{% endif %}>
+                                    {{ p.name }} - ${{ "%.2f"|format(p.price) }} ({{ stock }} in stock)
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <!-- Quantity -->
+                        <div class="col-6">
+                            <label for="saleQuantityInput" class="form-label">Units Sold *</label>
+                            <input type="number" min="1" class="form-control" id="saleQuantityInput" name="quantity" value="1" required>
+                        </div>
+                        <!-- Discount -->
+                        <div class="col-6">
+                            <label for="saleDiscountInput" class="form-label">Discount (%)</label>
+                            <div class="input-group">
+                                <input type="number" min="0" max="100" step="0.5" class="form-control" id="saleDiscountInput" name="discount" value="0">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Total Card -->
+                    <div class="bg-light p-3 rounded-3 text-center mb-4 border">
+                        <div class="text-muted small text-uppercase fw-bold">Calculated Total Revenue</div>
+                        <h2 class="text-success fw-bold my-1" id="saleTotalDisplay">$0.00</h2>
+                        <small class="text-muted">Includes discount deduction</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2">
+                        <i class="bi bi-check2-circle me-1"></i> Complete Sale & Decrement Stock
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue Snapshot Cards -->
+    <div class="col-lg-7">
+        <div class="row g-3">
+            <div class="col-sm-6">
+                <div class="metric-card card-green">
+                    <div class="metric-info">
+                        <h6>Cumulative Revenue</h6>
+                        <h3>${{ "%.2f"|format(revenue.total_revenue) }}</h3>
+                        <p>Total retail intake</p>
+                    </div>
+                    <div class="metric-icon"><i class="bi bi-cash-stack"></i></div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="metric-card card-blue">
+                    <div class="metric-info">
+                        <h6>Transactions</h6>
+                        <h3>{{ revenue.total_transactions }}</h3>
+                        <p>Total sales receipts</p>
+                    </div>
+                    <div class="metric-icon"><i class="bi bi-receipt-cutoff"></i></div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="metric-card card-teal">
+                    <div class="metric-info">
+                        <h6>Total Units Sold</h6>
+                        <h3>{{ revenue.total_units_sold }}</h3>
+                        <p>Physical goods moved</p>
+                    </div>
+                    <div class="metric-icon"><i class="bi bi-boxes"></i></div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="metric-card card-purple">
+                    <div class="metric-info">
+                        <h6>Average Order Value</h6>
+                        <h3>${{ "%.2f"|format(revenue.average_order_value) }}</h3>
+                        <p>Per transaction mean</p>
+                    </div>
+                    <div class="metric-icon"><i class="bi bi-bar-chart"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info border-info mt-3 py-2 small">
+            <i class="bi bi-shield-check text-primary me-2"></i>
+            <strong>Transaction Isolation:</strong> Deducting inventory and recording sales are handled atomically inside <code>SalesService.create_sale()</code>. If inventory is insufficient, the transaction immediately aborts without deducting stock.
+        </div>
+    </div>
+</div>
+
+<!-- Sales History Table -->
+<div class="custom-card">
+    <div class="custom-card-header">
+        <h5><i class="bi bi-clock-history text-secondary"></i> Sales Transaction Ledger</h5>
+        <span class="badge bg-light text-dark border">{{ sales|length }} Receipts</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-custom align-middle">
+            <thead>
+                <tr>
+                    <th>Receipt #</th>
+                    <th>Product</th>
+                    <th>Units</th>
+                    <th>Unit Price</th>
+                    <th>Discount</th>
+                    <th>Total Revenue</th>
+                    <th>Date & Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if sales %}
+                    {% for s in sales %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace">TX-{{ "%04d"|format(s.id) }}</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ s.product.name if s.product else 'Deleted Product' }}</div>
+                                <small class="text-muted">{{ s.product.sku if s.product else 'N/A' }}</small>
+                            </td>
+                            <td><strong class="text-primary">{{ s.quantity }}x</strong></td>
+                            <td>${{ "%.2f"|format(s.unit_price) }}</td>
+                            <td>
+                                {% if s.discount > 0 %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis">-{{ s.discount }}%</span>
+                                {% else %}
+                                    <span class="text-muted small">None</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold text-success">${{ "%.2f"|format(s.total_amount) }}</td>
+                            <td class="text-muted small">{{ s.sale_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-5">
+                            <i class="bi bi-receipt fs-1 text-secondary d-block mb-2"></i>
+                            No sales recorded yet. Use the checkout form above to complete a sale!
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
