@@ -13,6 +13,7 @@ the app at runtime. This allows:
 3. Modular registration of domain Blueprints (Products, Inventory, Sales, Analytics).
 """
 
+import os
 from typing import Tuple, Dict, Any
 from flask import Flask, jsonify, Response
 from config.config import config_by_name
@@ -26,18 +27,30 @@ from routes.auth_routes import auth_bp
 from routes.reports_routes import reports_bp
 
 
-def create_app(config_name: str = "development") -> Flask:
+def create_app(config_name: str | None = None) -> Flask:
     """
     Application factory function that initializes and configures the Flask application.
 
     Args:
-        config_name (str): Configuration environment ('development', 'testing', 'default').
+        config_name (str, optional): Configuration environment ('development', 'production', 'testing').
+                                    Defaults to 'production' on Vercel, else 'development'.
 
     Returns:
         Flask: The configured Flask application instance.
     """
-    # 1. Instantiate the core Flask application
-    app = Flask(__name__)
+    if config_name is None:
+        config_name = os.environ.get(
+            "FLASK_ENV", "production" if os.environ.get("VERCEL") else "development"
+        )
+
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+
+    # 1. Instantiate the core Flask application with explicit absolute paths for templates & static
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(base_dir, "templates"),
+        static_folder=os.path.join(base_dir, "static"),
+    )
 
     # 2. Load environment-specific configurations
     selected_config = config_by_name.get(config_name, config_by_name["default"])
@@ -127,8 +140,8 @@ def create_app(config_name: str = "development") -> Flask:
     return app
 
 
-# Create the application instance for WSGI servers (like Gunicorn) and direct execution
-app = create_app("development")
+# Create the application instance for WSGI servers (like Gunicorn/Vercel) and direct execution
+app = create_app()
 
 if __name__ == "__main__":
     # In development mode, Flask provides an interactive debugger and reloader

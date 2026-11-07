@@ -25,11 +25,19 @@ class Config:
     # Base directory of the project, used to construct absolute file paths.
     BASE_DIR: str = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
-    # Path to the SQLite database file stored locally in the instance or root folder.
-    # SQLite is serverless, zero-configuration, and stores data in a single file,
-    # making it ideal for educational projects and Viva demonstrations.
-    SQLALCHEMY_DATABASE_URI: str = os.environ.get(
-        "DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'retail_stock.db')}"
+    # Database connection resolution:
+    # 1. Handles Cloud Postgres (Neon / Supabase / Vercel Postgres) by replacing postgres:// with postgresql://
+    # 2. On Vercel serverless (where disk is read-only), defaults to /tmp/ if no external DATABASE_URL is set
+    # 3. In local development, defaults to local retail_stock.db
+    _raw_db_url = os.environ.get("DATABASE_URL")
+    if _raw_db_url and _raw_db_url.startswith("postgres://"):
+        _raw_db_url = _raw_db_url.replace("postgres://", "postgresql://", 1)
+
+    if not _raw_db_url and (os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME")):
+        _raw_db_url = "sqlite:////tmp/retail_stock.db"
+
+    SQLALCHEMY_DATABASE_URI: str = (
+        _raw_db_url or f"sqlite:///{os.path.join(BASE_DIR, 'retail_stock.db')}"
     )
 
     # Disable SQLAlchemy event system tracking modifications to save memory.
@@ -47,6 +55,15 @@ class DevelopmentConfig(Config):
     TESTING: bool = False
 
 
+class ProductionConfig(Config):
+    """
+    Configuration for cloud / production deployments (e.g. Vercel, Render, Railway).
+    Disables debug mode for security and optimal performance.
+    """
+    DEBUG: bool = False
+    TESTING: bool = False
+
+
 class TestingConfig(Config):
     """
     Configuration for automated unit tests. Uses an in-memory SQLite database
@@ -60,6 +77,7 @@ class TestingConfig(Config):
 # Dictionary mapping environment names to configuration classes for easy lookup.
 config_by_name: dict[str, Type[Config]] = {
     "development": DevelopmentConfig,
+    "production": ProductionConfig,
     "testing": TestingConfig,
     "default": DevelopmentConfig,
 }

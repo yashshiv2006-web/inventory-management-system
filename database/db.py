@@ -72,3 +72,12 @@ def init_db(app: Flask) -> None:
 
         # Executes CREATE TABLE IF NOT EXISTS for all defined models
         db.create_all()
+
+        # Auto-seed initial demo data (users, suppliers, products, inventory) if the database is newly initialized
+        try:
+            if not User.query.first():
+                from database.seed_data import populate_sample_data
+                populate_sample_data()
+        except Exception as seed_err:
+            # Prevent startup crash if seeding encounters any transient constraint issue
+            print(f"[Notice] Auto-seed skipped or completed: {seed_err}")
