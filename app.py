@@ -26,7 +26,6 @@ from routes.dashboard_routes import web_bp
 from routes.auth_routes import auth_bp
 from routes.reports_routes import reports_bp
 
-
 def create_app(config_name: str | None = None) -> Flask:
     """
     Application factory function that initializes and configures the Flask application.
@@ -97,7 +96,7 @@ def create_app(config_name: str | None = None) -> Flask:
         }), 500
 
     # 6. Service Health Check & API Directory Route
-    @app.route("/", methods=["GET"])
+    @app.route("/api", methods=["GET"])
     @app.route("/api/health", methods=["GET"])
     def health_check() -> Tuple[Response, int]:
         """
